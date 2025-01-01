@@ -40,25 +40,7 @@ func init() {
 }
 
 func (g *Game) Update() error {
-	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) && !g.Pressed {
-		if g.idx > 0 {
-			g.idx--
-		}
-		fmt.Println(g.trans)
-		g.img, g.trans, g.sents = g.loadFiles("image")
-		g.Pressed = true
-	}
-	if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) && !g.Pressed {
-		if g.idx < len(g.images)-1 {
-			g.idx++
-		}
-		g.img, g.trans, g.sents = g.loadFiles("image")
-		fmt.Println(g.trans)
-		g.Pressed = true
-	}
-	if !ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) && !ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
-		g.Pressed = false
-	}
+	g.pageChange()
 
 	return nil
 }
@@ -70,10 +52,43 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	screen.DrawImage(g.img, op)
 
-	g.drawTextWithOrigin(screen)
+	g.drawText(screen)
 }
 
-func (g *Game) drawTextWithOrigin(screen *ebiten.Image) {
+func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
+	return outsideWidth, outsideHeight
+}
+
+func main() {
+	g := &Game{}
+	g.loadFileNames("image")
+	if len(g.images) == 0 {
+		log.Fatal("0")
+	}
+	g.img, g.trans, g.sents = g.loadFiles("image")
+	ebiten.SetWindowSize(595, 841)
+	ebiten.SetWindowTitle("ImgViewer")
+
+	if err := ebiten.RunGame(g); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (g *Game) pageChange() {
+	if (ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) || ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight)) && !g.Pressed {
+		if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) && g.idx > 0 {
+			g.idx--
+		} else if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) && g.idx < len(g.images)-1 {
+			g.idx++
+		}
+		g.img, g.trans, g.sents = g.loadFiles("image")
+		g.Pressed = true
+	} else if !ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) && !ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
+		g.Pressed = false
+	}
+}
+
+func (g *Game) drawText(screen *ebiten.Image) {
 	mouseX, mouseY := ebiten.CursorPosition()
 	gray := color.RGBA{0x80, 0x80, 0x80, 0xff}
 
@@ -107,11 +122,11 @@ func (g *Game) loadFiles(dir string) (img *ebiten.Image, trans [][4]int, sents [
 		log.Fatal(err)
 	}
 
-	trans, sents = txtScanner(dir + "/" + fn[:len(fn)-4] + ".txt")
+	trans, sents = loadTexts(dir + "/" + fn[:len(fn)-4] + ".txt")
 	return
 }
 
-func txtScanner(fn string) (result [][4]int, sents []string) {
+func loadTexts(fn string) (result [][4]int, sents []string) {
 	tf, err := os.Open(fn)
 	if err != nil {
 		return
@@ -143,10 +158,6 @@ func txtScanner(fn string) (result [][4]int, sents []string) {
 	return
 }
 
-func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return outsideWidth, outsideHeight
-}
-
 func (g *Game) loadFileNames(dir string) {
 	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -176,20 +187,4 @@ func (g *Game) imgScale(screen *ebiten.Image, img *ebiten.Image) float64 {
 func isImage(fileName string) bool {
 	ext := strings.ToLower(filepath.Ext(fileName))
 	return ext == ".png" || ext == ".jpg" || ext == ".jpeg"
-}
-
-func main() {
-	g := &Game{}
-	g.loadFileNames("image")
-	if len(g.images) == 0 {
-		log.Fatal("0")
-	}
-	g.img, g.trans, g.sents = g.loadFiles("image")
-	fmt.Println(g.trans)
-	ebiten.SetWindowSize(595, 841)
-	ebiten.SetWindowTitle("ImgViewer")
-
-	if err := ebiten.RunGame(g); err != nil {
-		log.Fatal(err)
-	}
 }
