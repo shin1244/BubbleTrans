@@ -41,18 +41,13 @@ func init() {
 
 func (g *Game) Update() error {
 	g.pageChange()
-
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	op := &ebiten.DrawImageOptions{}
-	scale := g.imgScale(screen, g.img)
-	op.GeoM.Scale(scale, scale)
-
+	op := imgScale(screen, g.img)
 	screen.DrawImage(g.img, op)
-
-	g.drawText(screen)
+	g.drawTextAndBorder(screen)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -66,7 +61,7 @@ func main() {
 		log.Fatal("0")
 	}
 	g.img, g.trans, g.sents = g.loadFiles("image")
-	ebiten.SetWindowSize(595, 841)
+	ebiten.SetWindowSize(640, 904)
 	ebiten.SetWindowTitle("ImgViewer")
 
 	if err := ebiten.RunGame(g); err != nil {
@@ -88,9 +83,8 @@ func (g *Game) pageChange() {
 	}
 }
 
-func (g *Game) drawText(screen *ebiten.Image) {
-	mouseX, mouseY := ebiten.CursorPosition()
-	gray := color.RGBA{0x80, 0x80, 0x80, 0xff}
+func (g *Game) drawTextAndBorder(screen *ebiten.Image) {
+	x, y := ebiten.CursorPosition()
 
 	f := &text.GoTextFace{
 		Source:    koreanFaceSource,
@@ -100,19 +94,32 @@ func (g *Game) drawText(screen *ebiten.Image) {
 	}
 
 	for idx, val := range g.trans {
-		x1, x2, y1, y2 := val[0], val[1], val[2], val[3]
-		if mouseX >= x1 && mouseX <= x2 && mouseY >= y1 && mouseY <= y2 {
-			x, y := mouseX, mouseY
-			w, h := text.Measure(g.sents[idx], f, 0)
-
-			vector.DrawFilledRect(screen, float32(x), float32(y), float32(w), float32(h), gray, false)
-
-			op := &text.DrawOptions{}
-			op.GeoM.Translate(float64(x), float64(y))
-			text.Draw(screen, g.sents[idx], f, op)
+		y1, y2, x1, x2 := val[0], val[1], val[2], val[3]
+		drawBorder(screen, y1, y2, x1, x2)
+		if x >= x1 && x <= x2 && y >= y1 && y <= y2 {
+			drawText(screen, x, y, g.sents[idx], f)
 		}
 	}
+}
 
+func drawBorder(screen *ebiten.Image, y1, y2, x1, x2 int) {
+	lineWidth := 2.0
+	color := color.Black
+	vector.StrokeLine(screen, float32(x1), float32(y1), float32(x1), float32(y2), float32(lineWidth), color, false)
+	vector.StrokeLine(screen, float32(x1), float32(y1), float32(x2), float32(y1), float32(lineWidth), color, false)
+	vector.StrokeLine(screen, float32(x2), float32(y1), float32(x2), float32(y2), float32(lineWidth), color, false)
+	vector.StrokeLine(screen, float32(x1), float32(y2), float32(x2), float32(y2), float32(lineWidth), color, false)
+}
+
+func drawText(screen *ebiten.Image, x, y int, t string, f *text.GoTextFace) {
+	w, h := text.Measure(t, f, 0)
+	gray := color.RGBA{0x80, 0x80, 0x80, 0xff}
+
+	vector.DrawFilledRect(screen, float32(x), float32(y), float32(w), float32(h), gray, false)
+
+	op := &text.DrawOptions{}
+	op.GeoM.Translate(float64(x), float64(y))
+	text.Draw(screen, t, f, op)
 }
 
 func (g *Game) loadFiles(dir string) (img *ebiten.Image, trans [][4]int, sents []string) {
@@ -170,7 +177,9 @@ func (g *Game) loadFileNames(dir string) {
 	})
 }
 
-func (g *Game) imgScale(screen *ebiten.Image, img *ebiten.Image) float64 {
+func imgScale(screen *ebiten.Image, img *ebiten.Image) *ebiten.DrawImageOptions {
+	op := &ebiten.DrawImageOptions{}
+
 	w, h := screen.Bounds().Dx(), screen.Bounds().Dy()
 	imgW, imgH := img.Bounds().Dx(), img.Bounds().Dy()
 
@@ -181,7 +190,9 @@ func (g *Game) imgScale(screen *ebiten.Image, img *ebiten.Image) float64 {
 	if scaleY < scaleX {
 		scale = scaleY
 	}
-	return scale
+	op.GeoM.Scale(scale, scale)
+
+	return op
 }
 
 func isImage(fileName string) bool {
