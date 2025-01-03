@@ -51,7 +51,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return outsideWidth, outsideHeight
+	imgBounds := g.img.Bounds()
+	imgWidth, imgHeight := imgBounds.Dx(), imgBounds.Dy()
+
+	scaleX := float64(outsideWidth) / 640
+	scaleY := float64(outsideHeight) / 904
+	scale := min(scaleX, scaleY)
+
+	return int(float64(imgWidth) * scale), int(float64(imgHeight) * scale)
 }
 
 func main() {
@@ -86,16 +93,26 @@ func (g *Game) pageChange() {
 func (g *Game) drawTextAndBorder(screen *ebiten.Image) {
 	x, y := ebiten.CursorPosition()
 
+	screenWidth, screenHeight := screen.Size()
+	imgBounds := g.img.Bounds()
+	imgWidth, imgHeight := imgBounds.Dx(), imgBounds.Dy()
+	scaleX := float64(screenWidth) / float64(imgWidth)
+	scaleY := float64(screenHeight) / float64(imgHeight)
+
+	const fontSize = 18
 	f := &text.GoTextFace{
 		Source:    koreanFaceSource,
 		Direction: text.DirectionLeftToRight,
-		Size:      18,
+		Size:      fontSize,
 		Language:  language.Korean,
 	}
 
 	for idx, val := range g.trans {
-		y1, y2, x1, x2 := val[0], val[1], val[2], val[3]
+		y1, y2 := int(float64(val[0])*scaleY), int(float64(val[1])*scaleY)
+		x1, x2 := int(float64(val[2])*scaleX), int(float64(val[3])*scaleX)
+
 		drawBorder(screen, y1, y2, x1, x2)
+
 		if x >= x1 && x <= x2 && y >= y1 && y <= y2 {
 			drawText(screen, x, y, g.sents[idx], f)
 		}

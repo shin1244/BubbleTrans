@@ -10,9 +10,9 @@ import os
 if __name__ == '__main__':
   mocr = MangaOcr()
   model = YOLO("./best.pt")
-  auth_key = os.getenv('deepl')
+  auth_key = os.getenv("DEEPL_AUTH_KEY")
   translator = deepl.Translator(auth_key)
-  img_list = glob('./image/')
+  img_list = glob('./image/*')
   page_trans = []
   for image_path in img_list:
     if "txt" in image_path:
@@ -27,5 +27,5 @@ if __name__ == '__main__':
         pil_img = Image.fromarray(cv.cvtColor(cropped_img, cv.COLOR_BGR2RGB))
 
         text = mocr(pil_img)
-        # tran = translator.translate_text(text, source_lang="JA", target_lang="KO")
-        file.write(f"{yA} {yB} {xA} {xB} {text}\n")
+        tran = translator.translate_text(text, source_lang="JA", target_lang="KO")
+        file.write(f"{yA} {yB} {xA} {xB} {tran.text}\n")
