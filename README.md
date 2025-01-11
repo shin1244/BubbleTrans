@@ -15,11 +15,11 @@ GO 언어를 사용하여 높은 성능과 빠른 속도를 자랑합니다.
     </td>
     <td style="text-align: center;">
       <img src="https://github.com/user-attachments/assets/bce66022-9d33-4b03-a5e0-8bf9b242f885" alt="구글" width="300">
-      <p>구글 번역</p>
+      <p>파파고 번역</p>
     </td>
     <td style="text-align: center;">
       <img src="https://github.com/user-attachments/assets/cef33037-e32c-4324-9a32-b46a80b6eb45" alt="파파고+" width="300">
-      <p>파파고 번역</p>
+      <p>구글 번역</p>
     </td>
   </tr>
 </table>
